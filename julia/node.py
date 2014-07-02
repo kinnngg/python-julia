@@ -127,8 +127,8 @@ class MappingPatternNode(RequiredValueMixin, DefaultValueMixin, BasePatternNode)
     def __init__(self, **kwargs):
         super(MappingPatternNode, self).__init__(**kwargs)
 
-    def __init__(self, **kwargs):
-        table = kwargs.pop('table', None)
+    def __init__(self, table=None, **kwargs):
+        table = table if table is not None else kwargs.pop('table', None)
         try:
             self.table = dict(table)
         except (ValueError, TypeError):
@@ -177,12 +177,15 @@ class ListPatternNode(RequiredValueMixin, DefaultValueMixin, BasePatternNode):
 
     value_class = ListValueNode
 
-    def __init__(self, **kwargs):
-        item = kwargs.pop('item', None)
+    def __init__(self, item=None, **kwargs):
+        # allow a ListPatternNode to be instantiated with item as a positional argument
+        item = item if item is not None else kwargs.pop('item', None)
+        
         if item is None:
             raise PatternNodeError(
-                '{}.__init__ requires "item" keyword argument'.format(type(self))
+                '{}.__init__ requires an item'.format(type(self))
             )
+
         super(ListPatternNode, self).__init__(**kwargs)
         # pop the item class
         pattern_type = item.pop('type', None)
@@ -221,10 +224,11 @@ class DictPatternNode(RequiredValueMixin, DefaultValueMixin, BasePatternNode):
 
     value_class = DictValueNode
 
-    def __init__(self, **kwargs):
+    def __init__(self, items=None, **kwargs):
         self.items = {}
 
-        items = kwargs.pop('items', None)
+        # allow a DictPatternNode to be instantiated with items as a positional argument
+        items = items if items is not None else kwargs.pop('items', None)
         super(DictPatternNode, self).__init__(**kwargs)
 
         try:

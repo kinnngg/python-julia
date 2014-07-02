@@ -295,18 +295,6 @@ class NumericNodeTestCase(unittest.TestCase):
 
 class MappingPatternNodeTestCase(unittest.TestCase):
 
-    valid_tables = (
-        (('foo', 'bar'), ('spam', 'eggs')),
-        list(),  # empty mapping
-        tuple(), # same
-    )
-
-    invalid_tables = (
-        'foo',
-        42,
-        ('foo', 'bar'),
-    )
-
     @classmethod
     def setUpClass(cls):
         try:
@@ -315,17 +303,38 @@ class MappingPatternNodeTestCase(unittest.TestCase):
             cls.assertItemsEqual = cls.assertCountEqual
 
     def setUp(self):
+        self.valid_tables = (
+            (('foo', 'bar'), ('spam', 'eggs')),
+            list(),  # empty mapping
+            tuple(), # same
+        )
+
+        self.invalid_tables = (
+            'foo',
+            42,
+            ('foo', 'bar'),
+        )
+
         self.test_table = {'foo': 'bar', 'spam': 'eggs', 'baz': 'ham', 'question': 42, 'truth': True}
         self.valid_tables += (self.test_table,)
 
-    def test_mapping_node_accepts_all_sorts_of_python_mapping_types(self):
+    def test_mapping_node_accepts_table_as_keyword_argument(self):
         for valid in self.valid_tables:
             mapping_pattern_node = node.MappingPatternNode(table=valid)
+
+    def test_mapping_node_accepts_table_as_positional_argument(self):
+        for valid in self.valid_tables:
+            mapping_pattern_node = node.MappingPatternNode(valid)
 
     def test_mapping_node_fails_on_invalid_mapping_table(self):
         for invalid in self.invalid_tables:
             with self.assertRaises(node.PatternNodeError):
                 mapping_pattern_node = node.MappingPatternNode(table=invalid)
+
+    def test_mapping_node_fails_on_invalid_mapping_table_with_table_as_positional_arg(self):
+        for invalid in self.invalid_tables:
+            with self.assertRaises(node.PatternNodeError):
+                mapping_pattern_node = node.MappingPatternNode(invalid)
 
     def test_mapping_node_maps_key_to_value_on_valid_key(self):
         for test_key, test_value in six.iteritems(self.test_table):
@@ -431,29 +440,34 @@ class BooleanPattenNodeTestCase(unittest.TestCase):
 
 class ListPatternNodeTestCase(unittest.TestCase):
 
-    valid_items = (
-        {'type': node.BooleanPatternNode, 'required': False},
-        {'type': node.NumericPatternNode, 'required': True},
-        {'type': node.BooleanPatternNode, 'required': False},
-        {'type': node.ListPatternNode, 'item': {'type': node.ListPatternNode, 'item': {'type': node.StringPatternNode}}},
-    )
-
-    invalid_items = (
-        None,
-        {},                 # no type #1
-        {'default': 'bar'}, # no type #2
-        {'type': str},  # invalid type #1
-        {'type': int},  # invalid type #2
-        {'type': None}, # invalid type #3
-        {'something_different': 'bar'},
-        {'type': node.BooleanPatternNode, 'default': 'bar', 'required': False, 'irrelevant_arg': 'ham'}, # extra kwarg
-    )
-
     def setUp(self):
+
+        self.valid_items = (
+            {'type': node.BooleanPatternNode, 'required': False},
+            {'type': node.NumericPatternNode, 'required': True},
+            {'type': node.BooleanPatternNode, 'required': False},
+            {'type': node.ListPatternNode, 'item': {'type': node.ListPatternNode, 'item': {'type': node.StringPatternNode}}},
+        )
+
+        self.invalid_items = (
+            None,
+            {},                 # no type #1
+            {'default': 'bar'}, # no type #2
+            {'type': str},  # invalid type #1
+            {'type': int},  # invalid type #2
+            {'type': None}, # invalid type #3
+            {'something_different': 'bar'},
+            {'type': node.BooleanPatternNode, 'default': 'bar', 'required': False, 'irrelevant_arg': 'ham'}, # extra kwarg
+        )
+
         self.test_item = {'type': node.StringPatternNode, 'default': 'lol'}
 
     def test_list_pattern_node_fails_without_item_kwarg(self):
         self.assertRaises(node.PatternNodeError, node.ListPatternNode)
+
+    def test_list_pattern_node_is_allowed_to_pass_item_as_positional_argument(self):
+        pattern_node = node.ListPatternNode(self.test_item)
+        self.assertIsInstance(pattern_node.item, node.StringPatternNode)
 
     def test_list_pattern_node_passes_valid_item_kwarg(self):
         for valid_item in self.valid_items:
@@ -461,9 +475,19 @@ class ListPatternNodeTestCase(unittest.TestCase):
             list_pattern_node = node.ListPatternNode(item=valid_item)
             self.assertTrue(isinstance(list_pattern_node.item, item_type))
 
+    def test_list_pattern_node_passes_valid_item_positional_arg(self):
+        for valid_item in self.valid_items:
+            item_type = valid_item['type']
+            list_pattern_node = node.ListPatternNode(valid_item)
+            self.assertTrue(isinstance(list_pattern_node.item, item_type))
+
     def test_list_pattern_node_fails_with_invalid_item_kwarg(self):
         for invalid_item in self.invalid_items:
             self.assertRaises(node.PatternNodeError, node.ListPatternNode, item=invalid_item)
+
+    def test_list_pattern_node_fails_with_invalid_item_positional_arg(self):
+        for invalid_item in self.invalid_items:
+            self.assertRaises(node.PatternNodeError, node.ListPatternNode, invalid_item)
 
     def test_list_pattern_node_parse_returns_list(self):
         list_pattern_node = node.ListPatternNode(item=self.test_item)
@@ -561,13 +585,25 @@ class DictPatternNodeTestCase(unittest.TestCase):
     def test_dict_pattern_node_requires_items_keyword(self):
         self.assertRaises(node.PatternNodeError, node.DictPatternNode)
 
+    def test_dict_pattern_node_accepts_items_as_positional_argument(self):
+        pattern_node = node.DictPatternNode(self.test_item)
+        self.assertIsInstance(pattern_node.item('foo'), node.StringPatternNode)
+
     def test_dict_pattern_fails_on_invalid_pattern_items(self):
         for invalid in self.invalid_item_patterns:
             self.assertRaises(node.PatternNodeError, node.DictPatternNode, items=invalid)
 
+    def test_dict_pattern_fails_on_invalid_pattern_items_with_items_as_positional_arg(self):
+        for invalid in self.invalid_item_patterns:
+            self.assertRaises(node.PatternNodeError, node.DictPatternNode, invalid)
+
     def test_dict_pattern_passes_on_valid_pattern_items(self):
         for valid in self.valid_item_patterns:
             dict_pattern_node = node.DictPatternNode(items=valid)
+
+    def test_dict_pattern_passes_on_valid_pattern_items_with_items_as_positional_arg(self):
+        for valid in self.valid_item_patterns:
+            dict_pattern_node = node.DictPatternNode(valid)
 
     def test_dict_pattern_items_are_subclasses_of_base_pattern_node(self):
         for valid in self.valid_item_patterns:
