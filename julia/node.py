@@ -16,11 +16,11 @@ class ValueNodeError(BaseNodeError):
 
 
 class BaseValueNode(object):
-    value = None
 
     def __init__(self, raw, pattern):
         self.raw = raw
         self.pattern = pattern
+        self.value = None
 
     def __repr__(self):
         if self.value is not None:
