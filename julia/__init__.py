@@ -1,1 +1,4 @@
-__all__ = ['node', 'parse', 'shortcuts']
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
+from . import node, parse, shortcuts
