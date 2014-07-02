@@ -19,7 +19,7 @@ class PyTest(TestCommand):
 
 setup(
     name='python-julia',
-    version='1.0.0',
+    version='1.1.0',
     author='Sergei Khoroshilov',
     author_email='kh.sergei@gmail.com',
     packages=['julia'],
