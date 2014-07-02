@@ -6,12 +6,15 @@ import six
 
 
 class BaseNodeError(Exception):
+    """Base node exception."""
     pass
 
 class PatternNodeError(BaseNodeError):
+    """Raise PatternNodeError if unable to construct a pattern node object."""
     pass
 
 class ValueNodeError(BaseNodeError):
+    """Raise ValueNodeError if unable to parse a raw value or construct a value node object."""
     pass
 
 
@@ -29,10 +32,12 @@ class BaseValueNode(object):
 
 
 class PrimitiveValueNode(BaseValueNode):
+    """Use this class for primitive values such as a number or a string."""
     pass
 
 
 class DictValueNode(BaseValueNode, dict):
+    """A value node (subclass of BaseValueNode) class that makes its instances dict-like objects."""
 
     def __init__(self, *args, **kwargs):
         super(DictValueNode, self).__init__(*args, **kwargs)
@@ -40,6 +45,7 @@ class DictValueNode(BaseValueNode, dict):
 
 
 class ListValueNode(BaseValueNode, list):
+    """A value node (subclass of BaseValueNode) class that makes its instances list-like objects."""
 
     def __init__(self, *args, **kwargs):
         super(ListValueNode, self).__init__(*args, **kwargs)
@@ -47,6 +53,13 @@ class ListValueNode(BaseValueNode, list):
 
 
 class DefaultValueMixin(object):
+    """
+    A mixin that extends a pattern node class mro 
+    with the modified __init__ and parse methods:
+
+    * __init__ takes an extra keyword argument "default"
+    * parse replaces a None value with the default value.
+    """
 
     def __init__(self, **kwargs):
         self.default = kwargs.pop('default', None)
@@ -59,6 +72,13 @@ class DefaultValueMixin(object):
 
 
 class RequiredValueMixin(object):
+    """
+    A mixin that extends a pattern node class mro 
+    with the modified __init__ and parse methods:
+
+    * __init__ takes an extra keyword argument "required"
+    * parse raises ValueNodeError if passed a None value
+    """
 
     def __init__(self, **kwargs):
         self.required = bool(kwargs.pop('required', None))
@@ -72,9 +92,11 @@ class RequiredValueMixin(object):
 
 class BasePatternNode(object):
 
+    # the parse method will yield instances of value_class attribute
     value_class = PrimitiveValueNode
 
     def __init__(self, **kwargs):
+        # BasePatternNode takes no kwargs
         if kwargs:
             raise PatternNodeError(
                 '{} does not accept {}'.format(type(self), ', '.join([attr for attr in kwargs]))

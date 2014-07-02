@@ -5,6 +5,7 @@ import copy
 
 from . import node, parse
 
+
 def parse_pattern(pattern):
     return node.RootPatternNode(items=copy.deepcopy(pattern))
 
