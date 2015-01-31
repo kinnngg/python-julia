@@ -235,7 +235,12 @@ class ListPatternNode(RequiredValueMixin, DefaultValueMixin, BasePatternNode):
             if not isinstance(items, (list, tuple)):
                 raise ValueNodeError('{} is not a valid list instance'.format(items))
             for raw_item_value in items:
-                value_obj.append(self.item.parse(raw_item_value))
+                try:
+                    value_obj.append(self.item.parse(raw_item_value))
+                except ValueNodeError as e:
+                    if hasattr(self, 'name'):
+                        raise ValueNodeError('{}: {}'.format(self.name, e))
+                    raise
         return value_obj
 
     def clean(self, value):
@@ -297,7 +302,10 @@ class DictPatternNode(RequiredValueMixin, DefaultValueMixin, BasePatternNode):
                 )
 
             for item_key, item in six.iteritems(self.items):
-                value_obj[item.name] = item.parse(value_items.pop(item_key, None))
+                try:
+                    value_obj[item.name] = item.parse(value_items.pop(item_key, None))
+                except ValueNodeError as e:
+                    raise ValueNodeError('{}: {}'.format(item.name, e))
 
             # Unparsed items left
             if value_items:
